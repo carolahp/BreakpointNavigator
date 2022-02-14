@@ -24,49 +24,16 @@ BreakpointNavigatorPresenter class >> breakpointCommandsWith: presenter forRootG
 		register: (self browseBreakpointMethodCommandFor: presenter)
 ]
 
-{ #category : #specs }
-BreakpointNavigatorPresenter class >> defaultSpec [
-
-	^ SpPanedLayout newVertical
-		  add: (SpPanedLayout newHorizontal
-				   positionOfSlider: 60 percent;
-				   add: (SpBoxLayout newVertical
-						    add: #breakpointsHeader withConstraints: [ :constraints | 
-							    constraints
-								    fill: false;
-								    expand: false;
-								    height: self toolbarHeight ];
-						    add: #methodsWithBreakpoints;
-						    yourself);
-				   add: (SpBoxLayout newVertical
-						    add: #methodsHeader withConstraints: [ :constraints | 
-							    constraints
-								    fill: false;
-								    expand: false;
-								    height: self toolbarHeight ];
-						    add: #breakpointedMethods;
-						    yourself);
-				   yourself);
-		  add: (SpBoxLayout newVertical
-				   add: #codeHeader withConstraints: [ :constraints | 
-					   constraints
-						   fill: false;
-						   expand: false;
-						   height: self toolbarHeight ];
-				   add: #breakpointsInSourceCode;
-				   yourself);
-		  yourself
-]
-
 { #category : #'world menu' }
 BreakpointNavigatorPresenter class >> menuCommandOn: aBuilder [
 
 	<worldMenu>
 	(aBuilder item: #'Breakpoint Navigator')
 		parent: #Debug;
-		action: [ self new openWithSpec ];
+		action: [ self new open ];
 		order: -1;
-		help: 'A breakpoint navigator that allows you to browse, uninstall and (de)activate breakpoints at will.';
+		help:
+			'A breakpoint navigator that allows you to browse, uninstall and (de)activate breakpoints at will.';
 		icon: (self iconNamed: #glamorousBug).
 	aBuilder withSeparatorAfter
 ]
