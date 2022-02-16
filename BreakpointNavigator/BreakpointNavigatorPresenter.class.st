@@ -10,9 +10,11 @@ Class {
 		'methodsToNodesMap',
 		'breakpointsHeader',
 		'methodsHeader',
-		'codeHeader'
+		'codeHeader',
+		'configurationPresenter',
+		'configurationHeader'
 	],
-	#category : #BreakpointNavigator
+	#category : #'BreakpointNavigator-View'
 }
 
 { #category : #extensions }
@@ -22,6 +24,52 @@ BreakpointNavigatorPresenter class >> breakpointCommandsWith: presenter forRootG
 	aCmCommandsGroup
 		register: (self removeBreakpointCommandFor: presenter);
 		register: (self browseBreakpointMethodCommandFor: presenter)
+]
+
+{ #category : #layout }
+BreakpointNavigatorPresenter class >> defaultLayout [
+
+	^ SpPanedLayout newVertical
+		  add: (SpPanedLayout newHorizontal
+				   positionOfSlider: 60 percent;
+				   add: (SpBoxLayout newVertical
+						    add: #breakpointsHeader withConstraints: [ :constraints | 
+							    constraints
+								    fill: false;
+								    expand: false;
+								    height: self toolbarHeight ];
+						    add: #methodsWithBreakpoints;
+						    yourself);
+				   add: (SpBoxLayout newVertical
+						    add: #configurationHeader withConstraints: [ :constraints | 
+							    constraints
+								    fill: false;
+								    expand: false;
+								    height: self toolbarHeight ];
+						    add: #configurationPresenter;
+						    yourself);
+				   yourself);
+		  add: (SpPanedLayout newHorizontal 
+				positionOfSlider: 60 percent;
+				add: (SpBoxLayout newVertical
+						    add: #methodsHeader withConstraints: [ :constraints | 
+							    constraints
+								    fill: false;
+								    expand: false;
+								    height: self toolbarHeight ];
+						    add: #breakpointedMethods;
+						    yourself);
+				add: (SpBoxLayout newVertical
+				   add: #codeHeader withConstraints: [ :constraints | 
+					   constraints
+						   fill: false;
+						   expand: false;
+						   height: self toolbarHeight ];
+				   add: #breakpointsInSourceCode;
+				   yourself);
+				
+				yourself);
+		  yourself
 ]
 
 { #category : #'world menu' }
@@ -36,6 +84,14 @@ BreakpointNavigatorPresenter class >> menuCommandOn: aBuilder [
 			'A breakpoint navigator that allows you to browse, uninstall and (de)activate breakpoints at will.';
 		icon: (self iconNamed: #glamorousBug).
 	aBuilder withSeparatorAfter
+]
+
+{ #category : #'instance creation' }
+BreakpointNavigatorPresenter class >> on: aBreakpoint [
+
+	^ (super on: aBreakpoint)
+		  selectBreakpoint: aBreakpoint;
+		  yourself
 ]
 
 { #category : #extensions }
@@ -68,6 +124,7 @@ BreakpointNavigatorPresenter >> configureSourceCodeUpdate [
 			| selectedItem selectedBreakpoint |
 			selectedItem := selection selectedItem.
 			selectedBreakpoint := selectedItem breakpoint.
+			configurationPresenter breakpoint: selectedBreakpoint.
 			methodsToNodesMap := selectedBreakpoint targetMethodsToNodesMap.
 
 			breakpointedMethods items:
@@ -107,6 +164,11 @@ BreakpointNavigatorPresenter >> initializeBreakpointedMethodsList [
 	breakpointedMethods display: [ :compiledMethod | compiledMethod name ]
 ]
 
+{ #category : #initialize }
+BreakpointNavigatorPresenter >> initializeConfigurationPresenter [
+	configurationPresenter := BreakpointConfigurationPresenter new
+]
+
 { #category : #initialization }
 BreakpointNavigatorPresenter >> initializeHeaders [
 
@@ -116,6 +178,8 @@ BreakpointNavigatorPresenter >> initializeHeaders [
 	methodsHeader label: 'Affected methods'.
 	codeHeader := self instantiate: StHeaderBar.
 	codeHeader label: 'Breakpoint locations in the source code'.
+	configurationHeader := self instantiate: StHeaderBar.
+	configurationHeader label: 'Breakpoint configuration'
 ]
 
 { #category : #initialization }
@@ -126,6 +190,7 @@ BreakpointNavigatorPresenter >> initializePresenters [
 	self initializeBreakpointedMethodsList.	
 	self configureSourceCodeUpdate.
 	self buildTableData.
+	self initializeConfigurationPresenter.
 
 	SystemAnnouncer uniqueInstance weak when: StHaltCacheChanged send: #buildTableData to: self.
 	SystemAnnouncer uniqueInstance weak when: BreakpointAdded send: #buildTableData to: self.
@@ -147,6 +212,16 @@ BreakpointNavigatorPresenter >> resetAll [
 	breakpointedMethods items: OrderedCollection new.
 	breakpointsInSourceCode text: ''.
 	methodsWithBreakpoints unselectAll
+]
+
+{ #category : #'api - selection' }
+BreakpointNavigatorPresenter >> selectBreakpoint: aBreakpoint [
+
+	| selectIndex |
+	self methodsWithBreakpoints items doWithIndex: [ :each :index | 
+		             each breakpoint == aBreakpoint ifTrue: [ selectIndex := index ] ].
+	selectIndex ifNil: [ self error: 'Breakpoint not found'. ^ self ].
+	self methodsWithBreakpoints selectIndex: selectIndex scrollToSelection: true
 ]
 
 { #category : #updating }
